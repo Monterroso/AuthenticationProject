@@ -1,0 +1,7 @@
+#ignore envirnment variable, don't want these revealed.
+.env
+
+# Dependency directories
+node_modules/
+
+#ignore .DS_Store
