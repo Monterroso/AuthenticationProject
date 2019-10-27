@@ -1,11 +1,11 @@
 //jshint esversion:6
 
-require('dotenv').config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require("mongoose");
-const md5 = require("md5");
+const bcrypt = require("bcrypt");
+const saltRounds = 2;
 
 
 const app = express();
@@ -41,18 +41,23 @@ app.get("/register", function(req, res) {
 });
 
 app.post("/register", function(req, res) {
-  let newUser = new User({
-    email: req.body.username,
-    password: md5(req.body.password)
-  });
+  let userName = req.body.username;
+  let password = req.body.password;
 
-  newUser.save(function(err) {
-    if (err) {
-      console.log(err);
-    } else {
-      res.render("secrets");
-    }
-  })
+  bcrypt.hash(password, saltRounds, function(err, hash) {
+    let newUser = new User({
+      email: userName,
+      password: hash
+    });
+
+    newUser.save(function(err) {
+      if (err) {
+        console.log(err);
+      } else {
+        res.render("secrets");
+      }
+    })
+  });
 });
 
 app.post("/login", function(req, res) {
@@ -64,18 +69,19 @@ app.post("/login", function(req, res) {
       console.log(err);
     } else {
       if (foundUser) {
-        console.log(foundUser.password);
-        if (foundUser.password === md5(password)) {
-          res.render("secrets");
-        }
-        else {
-          console.log("That was the incorrect password");
-          res.render("login");
-        }
+        bcrypt.compare(password, foundUser.password, function(berr, bres) {
+          if (bres === true) {
+            res.render("secrets");
+          }
+          else {
+            console.log("That was the incorrect password");
+            res.render("login");
+          }
+        });
       }
     }
-  })
-})
+  });
+});
 
 app.listen(3000, function() {
   console.log("Server listening on port 3000");
